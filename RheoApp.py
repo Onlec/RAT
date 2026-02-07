@@ -12,6 +12,66 @@ st.title("🧪 TPU Rheology Master Curve Tool")
 
 # --- FUNCTIE VOOR DATA INLEZEN ---
 def load_rheo_data(file):
+    # 1. Lees het bestand in om de JUISTE startregel te vinden
+    try:
+        raw_text = file.getvalue().decode('utf-8')
+    except UnicodeDecodeError:
+        raw_text = file.getvalue().decode('latin-1')
+    
+    lines = raw_text.splitlines()
+    start_row = -1
+    for i, line in enumerate(lines):
+        # We zoeken naar de regel die begint met een tab en dan 'Point No.'
+        if "Point No." in line and "\t" in line:
+            # Check of dit de regel is direct boven de eenheden [°C]
+            if i+2 < len(lines) and "[°C]" in lines[i+2]:
+                start_row = i
+                break
+    
+    if start_row == -1:
+        st.error("Kon de datatabel ('Point No.') niet vinden in het bestand.")
+        return pd.DataFrame()
+
+    # 2. Inlezen met Pandas (skip alles boven de tabel)
+    file.seek(0)
+    try:
+        df = pd.read_csv(file, sep='\t', skiprows=start_row, encoding='utf-8', on_bad_lines='warn')
+    except UnicodeDecodeError:
+        file.seek(0)
+        df = pd.read_csv(file, sep='\t', skiprows=start_row, encoding='latin-1', on_bad_lines='warn')
+
+    # 3. Opschonen van de kolommen (verwijder verborgen witruimte)
+    df.columns = df.columns.str.strip()
+    df = df.dropna(axis=1, how='all')
+
+    # 4. Handmatige kolom mapping op basis van positie of naam
+    # Dit is de veiligste manier voor reometer exports
+    new_cols = {}
+    for col in df.columns:
+        c = col.lower()
+        if 'point' in c: new_cols[col] = 'Point'
+        elif 'temp' in c: new_cols[col] = 'T'
+        elif 'freq' in c: new_cols[col] = 'omega'
+        elif 'storage' in c or "g'" == c or "g' " in c: new_cols[col] = 'Gp'
+        elif 'loss' in c or 'g"' in c or 'g" ' in c: new_cols[col] = 'Gpp'
+    
+    df = df.rename(columns=new_cols)
+
+    # 5. Verwijder de eenheden-rij en rommel
+    # De eenheden-rij heeft geen getal in de 'Point' kolom
+    df['Point'] = pd.to_numeric(df['Point'], errors='coerce')
+    df = df.dropna(subset=['Point'])
+
+    # 6. Forceer alles naar nummers
+    for col in ['T', 'omega', 'Gp', 'Gpp']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        else:
+            # Als een kolom mist, maken we hem leeg aan om crashes te voorkomen
+            df[col] = np.nan
+
+    # Alleen rijen overhouden waar we echt iets aan hebben
+    return df.dropna(subset=['omega', 'Gp', 'T'])
     # 1. Lees het bestand in als tekst om de startregel te vinden
     try:
         raw_content = file.getvalue().decode('utf-8').splitlines()
