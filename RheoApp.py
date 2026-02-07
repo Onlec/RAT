@@ -142,7 +142,12 @@ if uploaded_file:
 
         st.sidebar.markdown("---")
         st.sidebar.subheader("Handmatige Shift (log aT)")
-        
+        st.sidebar.header("3. Weergave")
+        cmap_option = st.sidebar.selectbox(
+            "Kleurenschema",
+            ["plasma", "viridis", "inferno", "coolwarm", "jet"],
+            index=0
+        )
         for t in selected_temps:
             # Door de key te veranderen bij elke auto-align/reset, 
             # springt de slider fysiek naar de berekende waarde.
@@ -156,44 +161,51 @@ if uploaded_file:
             )
 
         # --- VISUALISATIE ---
-        st.write(f"### Master Curve bij {ref_temp}°C")
+        st.write(f"### Resultaten Master Curve @ {ref_temp}°C")
+        
+        # Kleurenschema ophalen op basis van gebruikerskeuze
+        color_map = plt.get_cmap(cmap_option)
+        colors = color_map(np.linspace(0, 0.9, len(selected_temps)))
         
         col1, col2 = st.columns([2, 1])
         
         with col1:
+            # 1. De Master Curve
             fig1, ax1 = plt.subplots(figsize=(10, 6))
-            colors = plt.cm.viridis(np.linspace(0, 1, len(selected_temps)))
             for t, color in zip(selected_temps, colors):
                 data = df[df['T_group'] == t].copy()
                 a_t = 10**st.session_state.shifts[t]
-                ax1.loglog(data['omega'] * a_t, data['Gp'], 'o-', color=color, label=f"{int(t)}°C G'", markersize=4)
+                
+                # Plot G'
+                ax1.loglog(data['omega'] * a_t, data['Gp'], 'o-', color=color, 
+                           label=f"{int(t)}°C G'", markersize=4)
+                
+                # Plot G'' (altijd tonen, maar subtieler)
                 if 'Gpp' in data.columns:
-                    ax1.loglog(data['omega'] * a_t, data['Gpp'], 'x--', color=color, alpha=0.3, markersize=3)
-            ax1.set_xlabel("ω·aT (rad/s)")
-            ax1.set_ylabel("G', G'' (Pa)")
-            ax1.legend(loc='lower right', fontsize=8, ncol=2)
+                    ax1.loglog(data['omega'] * a_t, data['Gpp'], 'x--', color=color, 
+                               alpha=0.3, markersize=3)
+            
+            ax1.set_xlabel("Verschoven Frequentie ω·aT (rad/s)")
+            ax1.set_ylabel("Modulus G', G'' (Pa)")
             ax1.grid(True, which="both", alpha=0.2)
+            ax1.legend(loc='lower right', fontsize=8, ncol=2)
             st.pyplot(fig1)
 
-            # --- VAN GURP-PALMEN PLOT ---
-            st.subheader("Van Gurp-Palmen Plot (Structuur-check)")
-            st.info("💡 Een sprong naar 90° betekent dat het materiaal volledig gesmolten is. TTS is daar vaak niet meer geldig.")
+            # 2. De Van Gurp-Palmen Plot
+            st.subheader("Van Gurp-Palmen Plot")
             fig3, ax3 = plt.subplots(figsize=(10, 5))
-            
             for t, color in zip(selected_temps, colors):
                 data = df[df['T_group'] == t].copy()
                 g_star = np.sqrt(data['Gp']**2 + data['Gpp']**2)
                 delta = np.degrees(np.arctan2(data['Gpp'], data['Gp']))
-                
-                ax3.plot(g_star, delta, 'o-', color=color, label=f"{int(t)}°C", markersize=4, alpha=0.8)
+                ax3.plot(g_star, delta, 'o-', color=color, label=f"{int(t)}°C", markersize=4)
             
             ax3.set_xscale('log')
             ax3.set_xlabel("|G*| (Pa)")
             ax3.set_ylabel("Fasehoek δ (°)")
-            ax3.axhline(90, color='red', linestyle='--', alpha=0.3)
             ax3.set_ylim(0, 95)
+            ax3.axhline(90, color='red', linestyle='--', alpha=0.2)
             ax3.grid(True, which="both", alpha=0.2)
-            ax3.legend(loc='lower left', fontsize=8, ncol=2)
             st.pyplot(fig3)
         
         with col2:
