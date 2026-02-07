@@ -223,30 +223,32 @@ if uploaded_file:
             return eta_0 / (1 + (tau * omega)**n)
         
         def calculate_rheo_metrics(master_df):
-            """Bereken η0 en GN0 vanuit de mastercurve data"""
-            # 1. Zero Shear Viscosity (η0) extrapolatie via Cross Model
             w = master_df['w_s'].values
             eta_complex = master_df['eta_s'].values
             
+            # Standaard startwaarden (ook fallback)
+            p0 = [eta_complex.max(), 0.1, 0.8]
+            
             try:
-                # Initiële schatting: eta_0 is vaak de hoogste gemeten viscositeit
                 popt, _ = curve_fit(cross_model, w, eta_complex, 
-                                    p0=[eta_complex.max(), 0.1, 0.8], 
-                                    bounds=([0, 0, 0], [np.inf, np.inf, 1]))
+                                    p0=p0, 
+                                    bounds=([0, 0, 0], [np.inf, np.inf, 1]),
+                                    maxfev=5000)
                 eta_0, tau_cross, n_cross = popt
-            except:
+                success = True
+            except Exception as e:
+                # Bij fout: gebruik de startwaarden zodat de plot niet crasht
                 eta_0, tau_cross, n_cross = np.nan, np.nan, np.nan
-
-            # 2. Plateau Modulus (GN0) - Zoek waar G'' een minimum heeft of G' vlakt af
+                popt = p0 
+                success = False
+                
+            # Plateau Modulus GN0
             gp = master_df['Gp'].values
             gpp = master_df['Gpp'].values
-            
-            # Theoretische methode: GN0 is vaak G' waarbij tan delta minimaal is in het rubberplateau
             tan_d = gpp / gp
-            min_tan_idx = np.argmin(tan_d)
-            gn0 = gp[min_tan_idx] if w[min_tan_idx] > 1.0 else np.nan # Alleen zinvol bij hogere frequentie
+            gn0 = gp[np.argmin(tan_d)] if len(tan_d) > 0 else np.nan
             
-            return eta_0, gn0, (tau_cross, n_cross)
+            return eta_0, gn0, popt, success
         
         
         st.subheader(f"{sample_name}")
