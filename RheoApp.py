@@ -421,7 +421,7 @@ if uploaded_file:
             m_df = pd.concat(m_list).sort_values('w_s')
             s_val = st.slider("Smoothing Sterkte", 0.0, 2.0, 0.4)
             
-            eta0, gn0, cross_params = calculate_rheo_metrics(m_df)
+            eta0, gn0, fit_params, fit_success = calculate_rheo_metrics(m_df)
 
             log_w = np.log10(m_df['w_s'])
             log_eta = np.log10(m_df['eta_s'])
@@ -467,13 +467,18 @@ if uploaded_file:
             # Visuele extrapolatie plot
             st.subheader("Extrapolatie naar η₀ (Cross Model)")
             fig_ext, ax_ext = plt.subplots()
-            w_fit = np.logspace(np.log10(m_df['w_s'].min())-2, np.log10(m_df['w_s'].max()), 100)
-            
             ax_ext.loglog(m_df['w_s'], m_df['eta_s'], 'ko', alpha=0.3, label='Meetdata')
-            if not np.isnan(eta0):
-                ax_ext.loglog(w_fit, cross_model(w_fit, *cross_params), 'r--', label='Cross Model Fit')
-                ax_ext.axhline(eta0, color='red', linestyle=':', label=f'η₀ = {eta0:.1e}')
-                
+            if fit_success and not np.isnan(eta0):
+                w_fit = np.logspace(np.log10(m_df['w_s'].min())-2, np.log10(m_df['w_s'].max()), 100)
+                # Bereken de fit-lijn
+                eta_fit = cross_model(w_fit, fit_params[0], fit_params[1], fit_params[2])
+
+                ax_ext.loglog(w_fit, eta_fit, 'r--', linewidth=2, label='Cross Model Fit')
+                ax_ext.axhline(eta0, color='red', linestyle=':', label=f'η₀ = {eta0:.1e} Pa·s')
+                st.write(f"**Gevonden η₀:** {eta0:.2e} Pa·s | **Karakteristieke tijd (τ):** {fit_params[1]:.3f} s")
+            else:
+                st.warning("⚠️ η₀ extrapolatie mislukt. De data is mogelijk te beperkt voor een stabiele fit.")
+
             ax_ext.set_xlabel("ω·aT (rad/s)")
             ax_ext.set_ylabel("η* (Pa·s)")
             ax_ext.legend()
