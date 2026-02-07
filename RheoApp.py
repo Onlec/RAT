@@ -86,14 +86,14 @@ def extract_sample_name(file):
             file.seek(0)
             raw_bytes = file.read()
             if raw_bytes[:2] == b'\xff\xfe': 
-                decoded_text = raw_bytes.decode('utf-16-le')
+                text = raw_bytes.decode('utf-16-le')
             elif raw_bytes[:3] == b'\xef\xbb\xbf': 
-                decoded_text = raw_bytes.decode('utf-8-sig')
+                text = raw_bytes.decode('utf-8-sig')
             else:
                 try: 
-                    decoded_text = raw_bytes.decode('latin-1')
+                    text = raw_bytes.decode('latin-1')
                 except: 
-                    decoded_text = raw_bytes.decode('utf-8')
+                    text = raw_bytes.decode('utf-8')
             lines = text.splitlines()
             
             if len(lines) >= 3:
