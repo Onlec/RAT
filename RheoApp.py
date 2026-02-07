@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d, UnivariateSpline
 from io import BytesIO
 
 # --- CONFIGURATIE & STYLING ---
-st.set_page_config(page_title="TPU Rheology Expert Tool", layout="wide")
+st.set_page_config(page_title="RheoApp", layout="wide")
 
 # Custom CSS voor betere leesbaarheid van expert-notes
 st.markdown("""
@@ -19,6 +19,30 @@ st.markdown("""
 
 # --- FUNCTIES ---
 def load_rheo_data(file):
+
+    def extract_sample_name(file):
+        try:
+            file.seek(0)
+            # Lees de eerste paar regels in
+            content = file.read()
+            # Decodeer (gebruik dezelfde logica als in je load functie)
+            if isinstance(content, bytes):
+                text = content.decode('latin-1') 
+            else:
+                text = content
+                
+            lines = text.splitlines()
+            
+            if len(lines) >= 3:
+                row_3 = lines[2].split('\t') # Splitsen op tab
+                if len(row_3) >= 2:
+                    sample_name = row_3[1].strip() # Kolom 2
+                    return sample_name if sample_name else "Onbekend_Sample"
+            
+            return "Onbekend_Sample"
+        except Exception as e:
+            return f"Error_bij_lezen_{e}"
+    
     try:
         file.seek(0)
         raw_bytes = file.read()
@@ -184,7 +208,7 @@ if uploaded_file:
             ])
 
         with tab1:
-            st.subheader(f"Master Curve bij {ref_temp}°C")
+            st.subheader(f"{sample_name}Master Curve bij {ref_temp}°C")
             col_m1, col_m2 = st.columns([2, 1])
             
             with col_m1:
