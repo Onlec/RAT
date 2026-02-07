@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from scipy.interpolate import interp1d
-import io
 
 # --- CONFIGURATIE EN CSS ---
 st.set_page_config(page_title="TPU Rheology Tool", layout="wide")
@@ -85,7 +84,13 @@ if uploaded_file:
         
         st.sidebar.header("2. TTS Instellingen")
         selected_temps = st.sidebar.multiselect("Selecteer temperaturen", temps, default=temps)
-        ref_temp = st.sidebar.selectbox("Referentie T (°C)", selected_temps if selected_temps else temps, index=len(selected_temps)//2 if selected_temps else 0)
+        
+        # Check of er iets geselecteerd is om fouten te voorkomen
+        if not selected_temps:
+            st.warning("Selecteer minimaal één temperatuur in de sidebar.")
+            st.stop()
+
+        ref_temp = st.sidebar.selectbox("Referentie T (°C)", selected_temps, index=len(selected_temps)//2)
         
         if 'shifts' not in st.session_state:
             st.session_state.shifts = {t: 0.0 for t in temps}
@@ -151,7 +156,7 @@ if uploaded_file:
             with col_at:
                 st.subheader("Shift Factor Trend")
                 fig2, ax2 = plt.subplots(figsize=(5, 7))
-                t_list = sorted(st.session_state.shifts.keys())
+                t_list = sorted([t for t in st.session_state.shifts.keys() if t in selected_temps])
                 s_list = [st.session_state.shifts[t] for t in t_list]
                 ax2.plot(t_list, s_list, 's-', color='#FF4B4B')
                 ax2.axvline(ref_temp, color='black', linestyle='--', alpha=0.5)
@@ -159,7 +164,7 @@ if uploaded_file:
                 ax2.set_xlabel("T (°C)")
                 st.pyplot(fig2)
                 
-                shifts_df = pd.DataFrame(list(st.session_state.shifts.items()), columns=['T_C', 'log_aT'])
+                shifts_df = pd.DataFrame({'T_C': t_list, 'log_aT': s_list})
                 st.download_button("📥 Download Shifts CSV", shifts_df.to_csv(index=False), "shifts.csv")
 
         with tab2:
@@ -179,23 +184,17 @@ if uploaded_file:
             ax3.grid(True, which="both", alpha=0.2)
             ax3.legend(loc='lower right', fontsize=8, ncol=2)
             st.pyplot(fig3)
-        with tab3:
-            st.subheader("🧬 Verfijnde Arrhenius Analyse")
-            
-            # 1. Frequentie selectie voor viscositeit
-            all_omegas = sorted(df['omega'].unique())
-            target_omega = st.select_slider(
-                "Selecteer frequentie voor viscositeitsanalyse (rad/s)", 
-                options=all_omegas, 
-                value=all_omegas[len(all_omegas)//2]
-            )
 
-            # Data voorbereiden voor berekening
+        with tab3:
+            st.subheader("🧬 Thermische Analyse: Arrhenius & Viscositeit")
+            all_omegas = sorted(df['omega'].unique())
+            target_omega = st.select_slider("Selecteer frequentie voor viscositeitsanalyse (rad/s)", 
+                                           options=all_omegas, value=all_omegas[len(all_omegas)//2])
+
             t_kelvin = np.array([t + 273.15 for t in selected_temps])
             inv_t = 1/t_kelvin
             log_at = np.array([st.session_state.shifts[t] for t in selected_temps])
             
-            # Viscositeit berekenen (log eta*)
             viscosities = []
             for t in selected_temps:
                 d_t = df[(df['T_group'] == t)]
@@ -206,60 +205,46 @@ if uploaded_file:
             log_eta = np.array(viscosities)
 
             if len(selected_temps) > 2:
-                # Lineaire Regressie
                 coeffs_at = np.polyfit(inv_t, log_at, 1)
                 p_at = np.poly1d(coeffs_at)
-                
-                # Statistiek: R-kwadraat berekenen
-                y_resid = log_at - p_at(inv_t)
-                r2 = 1 - (np.sum(y_resid**2) / np.sum((log_at - np.mean(log_at))**2))
-                
-                # Ea berekening: Ea = helling * R * ln(10)
-                # Let op: de helling is positief of negatief afhankelijk van 1/T trend
+                r2_at = 1 - (np.sum((log_at - p_at(inv_t))**2) / np.sum((log_at - np.mean(log_at))**2))
                 ea = (coeffs_at[0] * 8.314 * np.log(10)) / 1000
-                
-                # Layout
-                col_graph, col_stats = st.columns([2, 1])
-                
-                with col_graph:
-                    fig4, ax4 = plt.subplots(figsize=(8, 5))
-                    ax4.scatter(inv_t, log_at, color='#FF4B4B', s=80, label='Meetpunten ($a_T$)', zorder=3)
-                    ax4.plot(inv_t, p_at(inv_t), 'k--', alpha=0.6, label=f'Lineaire Fit ($R^2={r2:.4f}$)')
-                    ax4.set_xlabel("1/T (1/K)", fontsize=10)
-                    ax4.set_ylabel("log($a_T$)", fontsize=10)
-                    ax4.legend()
-                    ax4.grid(True, alpha=0.2)
-                    st.pyplot(fig4)
 
-                with col_stats:
+                coeffs_eta = np.polyfit(inv_t, log_eta, 1)
+                p_eta = np.poly1d(coeffs_eta)
+                ea_flow = (coeffs_eta[0] * 8.314 * np.log(10)) / 1000
+
+                col_left, col_right = st.columns([2, 1])
+
+                with col_left:
+                    st.markdown("**A. Arrhenius Plot (Shift Factors $a_T$)**")
+                    fig_at, ax_at = plt.subplots(figsize=(8, 4))
+                    ax_at.scatter(inv_t, log_at, color='#FF4B4B', s=100, label='Data ($a_T$)', edgecolors='k')
+                    ax_at.plot(inv_t, p_at(inv_t), 'k--', alpha=0.7, label=f'Fit ($R^2={r2_at:.4f}$)')
+                    ax_at.set_xlabel("1/T (1/K)")
+                    ax_at.set_ylabel("log($a_T$)")
+                    ax_at.legend()
+                    st.pyplot(fig_at)
+
+                    st.markdown(f"**B. Viscositeit Trend ($\eta^*$) bij {target_omega:.2f} rad/s**")
+                    fig_visc, ax_visc = plt.subplots(figsize=(8, 4))
+                    ax_visc.scatter(inv_t, log_eta, color='#1f77b4', s=100, label='Data ($\eta^*$)', edgecolors='k')
+                    ax_visc.plot(inv_t, p_eta(inv_t), 'k--', alpha=0.7)
+                    ax_visc.set_xlabel("1/T (1/K)")
+                    ax_visc.set_ylabel("log($\eta^*$) [Pa·s]")
+                    st.pyplot(fig_visc)
+
+                with col_right:
                     st.metric("Activeringsenergie ($E_a$)", f"{abs(ea):.1f} kJ/mol")
+                    st.divider()
+                    st.metric("Flow $E_a$ ($\eta^*$)", f"{abs(ea_flow):.1f} kJ/mol")
                     
-                    # Kwaliteitscheck op basis van R^2
-                    if r2 > 0.99:
-                        st.success("✅ Uitstekende fit: Het materiaal volgt de Arrhenius-wet perfect.")
-                    elif r2 > 0.95:
-                        st.warning("⚠️ Matige fit: Er is een lichte afwijking. Mogelijk nadert het materiaal de smelt- of glasovergang.")
+                    if r2_at < 0.98:
+                        st.error("⚠️ Lage fit-kwaliteit.")
                     else:
-                        st.error("❌ Slechte fit: Arrhenius is hier niet geldig. Overweeg het WLF-model of controleer de vGP-plot op structuurveranderingen.")
-                    
-                    st.write("---")
-                    st.write("**Viscositeit trend:**")
-                    # Helling van viscositeit geeft ook een indicatie van Ea_flow
-                    coeffs_eta = np.polyfit(inv_t, log_eta, 1)
-                    ea_flow = (coeffs_eta[0] * 8.314 * np.log(10)) / 1000
-                    st.write(f"Flow $E_a$ via $\eta^*$: **{abs(ea_flow):.1f} kJ/mol**")
-
-                # Extra uitleg voor de gebruiker
-                with st.expander("Hoe wordt de Activeringsenergie berekend?"):
-                    st.write("""
-                    De activeringsenergie ($E_a$) wordt berekend met de Arrhenius-vergelijking:
-                    $$ \log(a_T) = \frac{E_a}{2.303 \cdot R} \left( \frac{1}{T} - \frac{1}{T_{ref}} \right) $$
-                    
-                    * Een **hoge $E_a$** betekent dat de viscositeit van de TPU erg gevoelig is voor temperatuurveranderingen.
-                    * Een **lage $E_a$** betekent dat de TPU stabiel blijft over een groter temperatuurbereik.
-                    """)
+                        st.success("✅ Goede fit.")
             else:
-                st.info("Selecteer minimaal 3 temperaturen in de zijbalk om de statistische analyse te starten.")
+                st.warning("Selecteer minimaal 3 temperaturen.")
     else:
         st.error("Geen geldige data gevonden.")
 else:
