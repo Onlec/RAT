@@ -132,11 +132,12 @@ if uploaded_file:
         colors = color_map(np.linspace(0, 0.9, len(selected_temps)))
         
         # --- TABS HOOFDSCHERM ---
-        tab1, tab2, tab3, tab4 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "📈 Master Curve", 
             "🧪 Structuur Analyse (vGP)", 
             "🧬 Thermische Analyse (Ea)", 
-            "🔬 Geavanceerde Check"
+            "🔬 Geavanceerde Check",
+            "💾 Export Data"
         ])
 
         with tab1:
@@ -269,7 +270,6 @@ if uploaded_file:
                 ax_han.legend(fontsize=8)
                 ax_han.grid(True, which="both", alpha=0.2)
                 st.pyplot(fig_han)
-                st.caption("Samenvallende lijnen bevestigen TTS geldigheid.")
 
             with col_cole:
                 st.markdown("**2. Cole-Cole Plot ($\eta''$ vs $\eta'$)**")
@@ -284,7 +284,6 @@ if uploaded_file:
                 ax_cole.set_ylabel("Out-of-phase Viscosity η'' (Pa·s)")
                 ax_cole.grid(True, alpha=0.2)
                 st.pyplot(fig_cole)
-                st.caption("Een enkele boog duidt op een homogeen relaxatiesysteem.")
 
             st.divider()
             st.markdown("**3. Cross-over Punten ($G' = G''$)**")
@@ -300,12 +299,34 @@ if uploaded_file:
                         "Crossover G (Pa)": round(data.loc[idx, 'Gp'], 0)
                     })
             
-            if crossover_data:
-                st.table(pd.DataFrame(crossover_data))
-            else:
-                st.info("Geen cross-over punten gevonden in het huidige meetbereik.")
+            if crossover_data: st.table(pd.DataFrame(crossover_data))
+            else: st.info("Geen cross-over punten gevonden.")
+
+        with tab5:
+            st.subheader("💾 Master Curve Export")
+            st.write("Exporteer de verschoven data voor gebruik in rapporten.")
+            
+            master_list = []
+            for t in selected_temps:
+                data = df[df['T_group'] == t].copy()
+                at = 10**st.session_state.shifts[t]
+                data['omega_shifted'] = data['omega'] * at
+                data['log_aT'] = st.session_state.shifts[t]
+                master_list.append(data)
+            
+            if master_list:
+                master_df = pd.concat(master_list)
+                st.dataframe(master_df[['T_group', 'omega_shifted', 'Gp', 'Gpp', 'log_aT']].sort_values('omega_shifted'))
+                
+                csv = master_df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 Download Volledige Master Curve CSV",
+                    data=csv,
+                    file_name=f"master_curve_{ref_temp}C.csv",
+                    mime='text/csv',
+                )
 
     else:
-        st.error("Geen geldige data gevonden in het bestand.")
+        st.error("Geen geldige data gevonden.")
 else:
-    st.info("👋 Welkom! Upload een Anton Paar CSV om de analyse te starten.")
+    st.info("👋 Upload een Anton Paar CSV om te beginnen.")
