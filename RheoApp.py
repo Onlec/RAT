@@ -21,6 +21,7 @@ def load_rheo_data(file):
     
     start_row = -1
     for i, line in enumerate(lines):
+        clean_line = line.strip()
         # Specifieke check om de 'Interval data' samenvatting over te slaan
         if "Point No." in line and "Temperature" in line and "Interval data:" not in line:
             start_row = i
