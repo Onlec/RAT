@@ -178,14 +178,10 @@ if uploaded_file:
         colors = color_map(np.linspace(0, 0.9, len(selected_temps)))
         
         # --- TABS ---
-        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-            "📈 Master Curve", 
-            "🧪 Structuur", 
-            "🧬 Thermisch (Ea/WLF)", 
-            "🔬 Validatie", 
-            "💾 Export", 
-            "📊 Dashboard"
-        ])
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+                "📈 Master Curve", "🧪 Structuur", "📉 tan δ Analyse", 
+                "🧬 Thermisch (Ea/WLF)", "🔬 Validatie", "💾 Export", "📊 Dashboard"
+            ])
 
         with tab1:
             st.subheader(f"Master Curve bij {ref_temp}°C")
@@ -234,8 +230,23 @@ if uploaded_file:
             ax3.grid(True, alpha=0.2)
             ax3.legend()
             st.pyplot(fig3)
-
         with tab3:
+            st.subheader("Loss Tangent (tan δ) - Relaxation Spectrum")
+            fig_tan, ax_tan = plt.subplots(figsize=(10, 5))
+            
+            for t, color in zip(selected_temps, colors):
+                d = df[df['T_group'] == t]
+                tan_d = d['Gpp'] / d['Gp']
+                ax_tan.semilogx(d['omega'], tan_d, 'o-', color=color, label=f"{int(t)}°C")
+            
+            ax_tan.axhline(1, color='red', linestyle='--', alpha=0.5, label='G\' = G\'\'')
+            ax_tan.set_xlabel("ω (rad/s)")
+            ax_tan.set_ylabel("tan δ")
+            ax_tan.legend(ncol=2, fontsize=8)
+            ax_tan.grid(True, alpha=0.2)
+            st.pyplot(fig_tan)
+            st.info("💡 Peaks in tan δ geven karakteristieke relaxatietijden aan. Bij TPU zie je vaak een verschuiving die duidt op de beweeglijkheid van de zachte segmenten.")
+        with tab4:
             st.subheader("🧬 Arrhenius vs WLF Vergelijking")
             
             # Gebruik de reeds berekende waarden
@@ -279,7 +290,7 @@ if uploaded_file:
                 * Gebruik **WLF** als je dicht bij de glasovergang meet ($T_g < T < T_g + 100^\\circ\\text{C}$).
                 """)
 
-        with tab4:
+        with tab5:
             st.subheader("🔬 Geavanceerde TTS Validatie")
             cv1, cv2 = st.columns(2)
             
@@ -306,8 +317,18 @@ if uploaded_file:
                 ax_c.grid(True, alpha=0.3)
                 st.pyplot(fig_c)
                 st.caption("Interpretatie: Een afgeplatte boog duidt op een brede molecuulgewichtsverdeling (MWD).")
+            st.divider()
+            st.subheader("⚖️ TTS Kwaliteitscontrole")
+            
+            # Eenvoudige check op R²
+            if r2_final > 0.98:
+                st.success(f"✅ Hoge betrouwbaarheid: R² = {r2_final:.4f}")
+            elif r2_final > 0.90:
+                st.warning(f"⚠️ Matige fit: R² = {r2_final:.4f}. Controleer de Van Gurp-Palmen plot.")
+            else:
+                st.error(f"❌ Lage betrouwbaarheid: R² = {r2_final:.4f}. TTS is waarschijnlijk niet geldig voor dit bereik.")
 
-        with tab5:
+        with tab6:
             st.subheader("💾 Smooth Export")
             
             # Spline logic
@@ -350,7 +371,7 @@ if uploaded_file:
                 mime="text/csv"
             )
 
-        with tab6:
+        with tab7:
             st.header("📊 TPU Expert Dashboard")
             
             # Kolommen voor metrics
@@ -415,6 +436,21 @@ if uploaded_file:
                 ]
             })
             
+            # Nieuwe berekening voor slopes (Terminal zone)
+            # We pakken de master curve data (m_df uit de export tab logica)
+            log_w = np.log10(m_df['w_s'].values)
+            log_gp = np.log10(m_df['Gp'].values)
+            
+            # Terminal slope (lage frequentie)
+            slope_term = np.polyfit(log_w[:5], log_gp[:5], 1)[0]
+            
+            col_d, col_e = st.columns(2)
+            col_d.metric("Terminal G' Slope", f"{slope_term:.2f}", help="Ideaal voor lineaire polymeren is 2.0")
+            
+            # Interpretatie
+            if slope_term < 1.5:
+                st.warning("De terminale helling is laag (< 1.5). Dit kan duiden op lange-keten branching of een onvolledige relaxatie door hard-segment domeinen.")
+                
             st.subheader("Overzichtstabel")
             st.table(summ_df)
             
