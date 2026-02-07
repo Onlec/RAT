@@ -134,16 +134,15 @@ if uploaded_file:
         # --- TABS HOOFDSCHERM ---
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "📈 Master Curve", 
-            "🧪 Structuur Analyse (vGP)", 
-            "🧬 Thermische Analyse (Ea)", 
-            "🔬 Geavanceerde Check",
-            "💾 Export Data"
+            "🧪 Structuur (vGP)", 
+            "🧬 Thermisch (Ea)", 
+            "🔬 Check",
+            "💾 Export & η0"
         ])
 
         with tab1:
             st.subheader(f"Master Curve bij {ref_temp}°C")
             col_graph, col_at = st.columns([2, 1])
-            
             with col_graph:
                 fig1, ax1 = plt.subplots(figsize=(10, 6))
                 for t, color in zip(selected_temps, colors):
@@ -157,7 +156,6 @@ if uploaded_file:
                 ax1.legend(loc='lower right', fontsize=8, ncol=2)
                 ax1.grid(True, which="both", alpha=0.2)
                 st.pyplot(fig1)
-
             with col_at:
                 st.subheader("Shift Factor Trend")
                 fig2, ax2 = plt.subplots(figsize=(5, 7))
@@ -168,13 +166,9 @@ if uploaded_file:
                 ax2.set_ylabel("log(aT)")
                 ax2.set_xlabel("T (°C)")
                 st.pyplot(fig2)
-                
-                shifts_df = pd.DataFrame({'T_C': t_list, 'log_aT': s_list})
-                st.download_button("📥 Download Shifts CSV", shifts_df.to_csv(index=False), "shifts.csv")
 
         with tab2:
             st.subheader("Van Gurp-Palmen Plot")
-            st.info("💡 Liggen de lijnen niet op elkaar? Dan verandert de structuur van je TPU.")
             fig3, ax3 = plt.subplots(figsize=(10, 6))
             for t, color in zip(selected_temps, colors):
                 data = df[df['T_group'] == t].copy()
@@ -184,149 +178,78 @@ if uploaded_file:
             ax3.set_xscale('log')
             ax3.set_xlabel("|G*| (Pa)")
             ax3.set_ylabel("Fasehoek δ (°)")
-            ax3.set_ylim(0, 95)
-            ax3.axhline(90, color='red', linestyle='--', alpha=0.2)
             ax3.grid(True, which="both", alpha=0.2)
-            ax3.legend(loc='lower right', fontsize=8, ncol=2)
             st.pyplot(fig3)
 
         with tab3:
-            st.subheader("🧬 Thermische Analyse: Arrhenius & Viscositeit")
+            st.subheader("🧬 Thermische Analyse")
             if len(selected_temps) >= 3:
-                all_omegas = sorted(df['omega'].unique())
-                target_omega = st.select_slider("Selecteer frequentie voor viscositeitsanalyse (rad/s)", 
-                                               options=all_omegas, value=all_omegas[len(all_omegas)//2])
-
                 t_kelvin = np.array([t + 273.15 for t in selected_temps])
                 inv_t = 1/t_kelvin
                 log_at = np.array([st.session_state.shifts[t] for t in selected_temps])
-                
-                viscosities = []
-                for t in selected_temps:
-                    d_t = df[(df['T_group'] == t)]
-                    idx = (d_t['omega'] - target_omega).abs().idxmin()
-                    row = d_t.loc[idx]
-                    g_star = np.sqrt(row['Gp']**2 + row['Gpp']**2)
-                    viscosities.append(np.log10(g_star / row['omega']))
-                log_eta = np.array(viscosities)
-
                 coeffs_at = np.polyfit(inv_t, log_at, 1)
-                p_at = np.poly1d(coeffs_at)
-                r2_at = 1 - (np.sum((log_at - p_at(inv_t))**2) / np.sum((log_at - np.mean(log_at))**2))
                 ea = (coeffs_at[0] * 8.314 * np.log(10)) / 1000
-
-                coeffs_eta = np.polyfit(inv_t, log_eta, 1)
-                p_eta = np.poly1d(coeffs_eta)
-                ea_flow = (coeffs_eta[0] * 8.314 * np.log(10)) / 1000
-
-                col_left, col_right = st.columns([2, 1])
-
-                with col_left:
-                    st.markdown("**A. Arrhenius Plot (Shift Factors $a_T$)**")
-                    fig_at, ax_at = plt.subplots(figsize=(8, 4))
-                    ax_at.scatter(inv_t, log_at, color='#FF4B4B', s=100, label='Data ($a_T$)', edgecolors='k')
-                    ax_at.plot(inv_t, p_at(inv_t), 'k--', alpha=0.7, label=f'Fit ($R^2={r2_at:.4f}$)')
-                    ax_at.set_xlabel("1/T (1/K)")
-                    ax_at.set_ylabel("log($a_T$)")
-                    ax_at.legend()
-                    st.pyplot(fig_at)
-
-                    st.markdown(f"**B. Viscositeit Trend ($\eta^*$) bij {target_omega:.2f} rad/s**")
-                    fig_visc, ax_visc = plt.subplots(figsize=(8, 4))
-                    ax_visc.scatter(inv_t, log_eta, color='#1f77b4', s=100, label='Data ($\eta^*$)', edgecolors='k')
-                    ax_visc.plot(inv_t, p_eta(inv_t), 'k--', alpha=0.7)
-                    ax_visc.set_xlabel("1/T (1/K)")
-                    ax_visc.set_ylabel("log($\eta^*$) [Pa·s]")
-                    st.pyplot(fig_visc)
-
-                with col_right:
-                    st.metric("Activeringsenergie ($E_a$)", f"{abs(ea):.1f} kJ/mol")
-                    st.divider()
-                    st.metric("Flow $E_a$ ($\eta^*$)", f"{abs(ea_flow):.1f} kJ/mol")
-                    if r2_at < 0.98: st.error("⚠️ Lage fit-kwaliteit.")
-                    else: st.success("✅ Goede fit.")
-            else:
-                st.warning("Selecteer minimaal 3 temperaturen voor thermische analyse.")
+                st.metric("Activeringsenergie ($E_a$)", f"{abs(ea):.1f} kJ/mol")
+                fig_at, ax_at = plt.subplots(figsize=(8, 4))
+                ax_at.scatter(inv_t, log_at, color='#FF4B4B')
+                ax_at.plot(inv_t, np.poly1d(coeffs_at)(inv_t), 'k--')
+                ax_at.set_xlabel("1/T (1/K)")
+                ax_at.set_ylabel("log(aT)")
+                st.pyplot(fig_at)
+            else: st.warning("Niet genoeg data voor Arrhenius.")
 
         with tab4:
-            st.subheader("🔬 Geavanceerde Karakterisering")
-            st.write("Gebruik deze plots om te valideren of de TTS wel echt geldig is.")
-            
-            col_han, col_cole = st.columns(2)
-            
-            with col_han:
-                st.markdown("**1. Han Plot ($G'$ vs $G''$)**")
-                fig_han, ax_han = plt.subplots(figsize=(6, 5))
-                for t, color in zip(selected_temps, colors):
-                    data = df[df['T_group'] == t]
-                    ax_han.loglog(data['Gpp'], data['Gp'], 'o', color=color, label=f"{int(t)}°C", markersize=4, alpha=0.7)
-                
-                min_val = min(df['Gp'].min(), df['Gpp'].min())
-                max_val = max(df['Gp'].max(), df['Gpp'].max())
-                ax_han.plot([min_val, max_val], [min_val, max_val], 'k--', alpha=0.4, label="G' = G''")
-                
-                ax_han.set_xlabel("Loss Modulus G'' (Pa)")
-                ax_han.set_ylabel("Storage Modulus G' (Pa)")
-                ax_han.legend(fontsize=8)
-                ax_han.grid(True, which="both", alpha=0.2)
+            st.subheader("🔬 Validatie Plots")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Han Plot**")
+                fig_han, ax_han = plt.subplots()
+                for t, c in zip(selected_temps, colors):
+                    d = df[df['T_group'] == t]
+                    ax_han.loglog(d['Gpp'], d['Gp'], 'o', color=c, markersize=3)
                 st.pyplot(fig_han)
-
-            with col_cole:
-                st.markdown("**2. Cole-Cole Plot ($\eta''$ vs $\eta'$)**")
-                fig_cole, ax_cole = plt.subplots(figsize=(6, 5))
-                for t, color in zip(selected_temps, colors):
-                    data = df[df['T_group'] == t]
-                    eta_prime = data['Gpp'] / data['omega']
-                    eta_double_prime = data['Gp'] / data['omega']
-                    ax_cole.plot(eta_prime, eta_double_prime, 'o-', color=color, markersize=4, label=f"{int(t)}°C")
-                
-                ax_cole.set_xlabel("Dynamic Viscosity η' (Pa·s)")
-                ax_cole.set_ylabel("Out-of-phase Viscosity η'' (Pa·s)")
-                ax_cole.grid(True, alpha=0.2)
+            with col2:
+                st.markdown("**Cole-Cole**")
+                fig_cole, ax_cole = plt.subplots()
+                for t, c in zip(selected_temps, colors):
+                    d = df[df['T_group'] == t]
+                    ax_cole.plot(d['Gpp']/d['omega'], d['Gp']/d['omega'], 'o-', color=c)
                 st.pyplot(fig_cole)
 
-            st.divider()
-            st.markdown("**3. Cross-over Punten ($G' = G''$)**")
-            crossover_data = []
-            for t in selected_temps:
-                data = df[df['T_group'] == t].sort_values('omega')
-                diff = (data['Gp'] - data['Gpp']).abs()
-                if diff.min() / data['Gp'].mean() < 0.2:
-                    idx = diff.idxmin()
-                    crossover_data.append({
-                        "Temperatuur (°C)": int(t),
-                        "Crossover ω (rad/s)": round(data.loc[idx, 'omega'], 2),
-                        "Crossover G (Pa)": round(data.loc[idx, 'Gp'], 0)
-                    })
-            
-            if crossover_data: st.table(pd.DataFrame(crossover_data))
-            else: st.info("Geen cross-over punten gevonden.")
-
         with tab5:
-            st.subheader("💾 Master Curve Export")
-            st.write("Exporteer de verschoven data voor gebruik in rapporten.")
+            st.subheader("💾 Finale Master Curve & η0")
             
             master_list = []
             for t in selected_temps:
                 data = df[df['T_group'] == t].copy()
                 at = 10**st.session_state.shifts[t]
                 data['omega_shifted'] = data['omega'] * at
-                data['log_aT'] = st.session_state.shifts[t]
+                data['eta_complex'] = np.sqrt(data['Gp']**2 + data['Gpp']**2) / data['omega_shifted']
                 master_list.append(data)
             
-            if master_list:
-                master_df = pd.concat(master_list)
-                st.dataframe(master_df[['T_group', 'omega_shifted', 'Gp', 'Gpp', 'log_aT']].sort_values('omega_shifted'))
-                
-                csv = master_df.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="📥 Download Volledige Master Curve CSV",
-                    data=csv,
-                    file_name=f"master_curve_{ref_temp}C.csv",
-                    mime='text/csv',
-                )
+            m_df = pd.concat(master_list).sort_values('omega_shifted')
+            
+            st.markdown("**1. Gecombineerde Modulus Plot**")
+            fig_final, ax_final = plt.subplots(figsize=(10, 5))
+            ax_final.loglog(m_df['omega_shifted'], m_df['Gp'], 'k-', label="G' Master")
+            ax_final.loglog(m_df['omega_shifted'], m_df['Gpp'], 'r-', alpha=0.5, label="G'' Master")
+            ax_final.set_xlabel("ω·aT (rad/s)")
+            ax_final.set_ylabel("Modulus (Pa)")
+            ax_final.legend()
+            st.pyplot(fig_final)
 
-    else:
-        st.error("Geen geldige data gevonden.")
-else:
-    st.info("👋 Upload een Anton Paar CSV om te beginnen.")
+            st.markdown("**2. Complexe Viscositeit & η0**")
+            fig_eta, ax_eta = plt.subplots(figsize=(10, 5))
+            ax_eta.loglog(m_df['omega_shifted'], m_df['eta_complex'], 'b-o', markersize=3)
+            ax_eta.set_xlabel("ω·aT (rad/s)")
+            ax_eta.set_ylabel("η* (Pa·s)")
+            st.pyplot(fig_eta)
+
+            eta0 = m_df['eta_complex'].head(3).mean()
+            st.metric("Nulviscositeit η0 (Schatting)", f"{eta0:.2e} Pa·s")
+            
+            csv = m_df.to_csv(index=False).encode('utf-8')
+            st.download_button("📥 Download Master Data CSV", csv, "tpu_final_master.csv", "text/csv")
+
+    else: st.error("Geen data gevonden.")
+else: st.info("👋 Upload een Anton Paar CSV om te beginnen.")
