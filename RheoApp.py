@@ -9,6 +9,7 @@ from io import BytesIO
 # --- CONFIGURATIE & STYLING ---
 st.set_page_config(page_title="RheoApp", layout="wide")
 st.title("RheoApp")
+st.caption("-Rheologie is 50% meten en 50% gezond verstand.")
 # Custom CSS voor betere leesbaarheid van expert-notes
 st.markdown("""
     <style>
@@ -205,54 +206,34 @@ if uploaded_file:
         res_wlf = minimize(wlf_err, x0=[17.4, c2_init])
         wlf_c1, wlf_c2 = res_wlf.x
 
-        # --- DATA PREP ---
-        color_map = plt.get_cmap(cmap_opt)
-        colors = color_map(np.linspace(0, 0.9, len(selected_temps)))
+        # --- 1. DATA AGGREGATIE (Cruciaal voor alle tabs) ---
+        m_list = []
+        for t in selected_temps:
+            d = df[df['T_group'] == t].copy()
+            at = 10**st.session_state.shifts[t]
+            d['w_s'] = d['omega'] * at
+            # Bereken complexe viscositeit: eta* = |G*| / omega
+            d['eta_s'] = np.sqrt(d['Gp']**2 + d['Gpp']**2) / d['w_s']
+            m_list.append(d)
         
-        # WLF met Tg-hint van Professor
-        def wlf_model(p, t, tr): return -p[0]*(t-tr) / (p[1] + (t-tr))
-        def wlf_err(p): return np.sum((log_at_global - wlf_model(p, t_k_global, tr_k_global))**2)
+        # Maak één centrale mastercurve dataframe
+        m_df = pd.concat(m_list).sort_values('w_s')
 
-        # Startwaarden aanpassen op basis van Tg
-        c2_init = max(50.0, ref_temp - tg_hint) 
-        res_wlf = minimize(wlf_err, x0=[17.4, c2_init])
-        wlf_c1, wlf_c2 = res_wlf.x
+        # --- 2. BEREKEN METRICS (Eén keer uitvoeren) ---
+        eta0, gn0, fit_params, fit_success = calculate_rheo_metrics(m_df)
+        
+        # Bereken Terminal Slope (G') robuust
+        # We pakken de laagste 20% van de frequentie-range voor de vloeizone
+        term_idx = int(len(m_df) * 0.2)
+        if term_idx > 3:
+            log_w_term = np.log10(m_df['w_s'].values[:term_idx])
+            log_gp_term = np.log10(m_df['Gp'].values[:term_idx])
+            slope_term = np.polyfit(log_w_term, log_gp_term, 1)[0]
+        else:
+            slope_term = np.nan
 
-        def cross_model(omega, eta_0, tau, n):
-            """Cross model voor viscositeit: eta = eta_0 / (1 + (tau*omega)^n)"""
-            return eta_0 / (1 + (tau * omega)**n)
-        
-        def calculate_rheo_metrics(master_df):
-            w = master_df['w_s'].values
-            eta_complex = master_df['eta_s'].values
-            
-            # Standaard startwaarden (ook fallback)
-            p0 = [eta_complex.max(), 0.1, 0.8]
-            
-            try:
-                popt, _ = curve_fit(cross_model, w, eta_complex, 
-                                    p0=p0, 
-                                    bounds=([0, 0, 0], [np.inf, np.inf, 1]),
-                                    maxfev=5000)
-                eta_0, tau_cross, n_cross = popt
-                success = True
-            except Exception as e:
-                # Bij fout: gebruik de startwaarden zodat de plot niet crasht
-                eta_0, tau_cross, n_cross = np.nan, np.nan, np.nan
-                popt = p0 
-                success = False
-                
-            # Plateau Modulus GN0
-            gp = master_df['Gp'].values
-            gpp = master_df['Gpp'].values
-            tan_d = gpp / gp
-            gn0 = gp[np.argmin(tan_d)] if len(tan_d) > 0 else np.nan
-            
-            return eta_0, gn0, popt, success
-        
-        
-        st.subheader(f"{sample_name}")
-        # --- TABS ---
+        # --- 3. TABS STARTEN ---
+        st.subheader(f"Sample: {sample_name}")
         tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
                 "📈 Master Curve", "🧪 Structuur", "📉 tan δ Analyse", 
                 "🧬 Thermisch (Ea/WLF)", "🔬 Validatie", "💾 Export", 
@@ -498,43 +479,12 @@ if uploaded_file:
         with tab8:
             st.header("📊 Expert Dashboard")
             
-            # Kolommen voor metrics
             col_a, col_b, col_c = st.columns(3)
-            
             col_a.metric("Flow Activation (Ea)", f"{ea_final:.1f} kJ/mol")
             
-            # Crossover berekening
-            co_list = []
-            for t in selected_temps:
-                d = df[df['T_group'] == t].sort_values('omega')
-                if len(d) > 3:
-                    try:
-                        f_diff = interp1d(
-                            np.log10(d['omega']), 
-                            np.log10(d['Gp']) - np.log10(d['Gpp']), 
-                            bounds_error=False
-                        )
-                        w_range = np.logspace(
-                            np.log10(d['omega'].min()), 
-                            np.log10(d['omega'].max()), 
-                            500
-                        )
-                        diffs = f_diff(np.log10(w_range))
-                        idx_zero = np.nanargmin(np.abs(diffs))
-                        if np.abs(diffs[idx_zero]) < 0.1:
-                            w_co = w_range[idx_zero]
-                            co_list.append({
-                                "T_C": int(t), 
-                                "w_co": round(w_co, 2), 
-                                "Lambda_s": round(1/w_co, 4)
-                            })
-                    except: 
-                        pass
-            
-            co_df = pd.DataFrame(co_list) if co_list else pd.DataFrame(columns=["T_C", "w_co", "Lambda_s"])
-
-            if not co_df.empty:
-                col_b.metric("Max Relaxatietijd", f"{co_df['Lambda_s'].max():.2e} s")
+            # De relaxatietijd uit de Cross-fit is vaak nauwkeuriger dan de crossover
+            if fit_success:
+                col_b.metric("Karakteristieke Tijd (τ)", f"{fit_params[1]:.3f} s", help="Gemiddelde relaxatietijd van de ketens")
             else:
                 col_b.metric("Max Relaxatietijd", "N/A")
                 
@@ -542,47 +492,16 @@ if uploaded_file:
             
             st.divider()
             
-            # Schone tabel voor export en weergave
-            summ_df = pd.DataFrame({
-                'Parameter': [
-                    'Activatie-energie Ea (kJ/mol)', 
-                    'WLF C1', 
-                    'WLF C2', 
-                    'Referentie T (°C)', 
-                    'Fit Kwaliteit (R²)'
-                ],
-                'Waarde': [
-                    round(ea_final, 2), 
-                    round(float(wlf_c1), 2), 
-                    round(float(wlf_c2), 2), 
-                    float(ref_temp), 
-                    round(r2_final, 4)
-                ]
-            })
-            
-            # Nieuwe berekening voor slopes (Terminal zone)
-            # We pakken de master curve data (m_df uit de export tab logica)
-            log_w = np.log10(m_df['w_s'].values)
-            log_gp = np.log10(m_df['Gp'].values)
-            
-            # Terminal slope (lage frequentie)
-            slope_term = np.polyfit(log_w[:5], log_gp[:5], 1)[0]
-            
             col_d, col_e = st.columns(2)
-            col_d.metric("Terminal G' Slope", f"{slope_term:.2f}", help="Ideaal voor lineaire polymeren is 2.0")
-            
-            # Interpretatie
-            if slope_term < 1.7:
-                st.error(f"⚠️ **Lage helling gedetecteerd ({slope_term:.2f})**")
-                st.markdown(f"""
-                **Analyse voor Productie:**
-                * **Mogelijke oorzaak:** Onvolledig gesmolten harde segmenten (fysiek netwerk).
-                * **Gevolg:** De coating vloeit niet goed uit.
-                * **Advies:** Verhoog de verwerkingstemperatuur in zone 1 van de machine of controleer op crosslinking.
-                """)
-            else:
-                st.success("✅ Materiaal vertoont goed vloeigedrag (lineair regime).")
+            col_d.metric("Terminal G' Slope", f"{slope_term:.2f}" if not np.isnan(slope_term) else "N/A")
+            col_e.metric("Zero Shear (η₀)", f"{eta0:.2e} Pa·s" if not np.isnan(eta0) else "N/A")
 
+            # De Professor's Analyse
+            if not np.isnan(slope_term) and slope_term < 1.7:
+                st.error(f"⚠️ **Vloeiprobleem gedetecteerd!**")
+                st.write(f"De helling ({slope_term:.2f}) is te laag. Dit duidt op een 'yield stress' of onvolledig gesmolten domeinen. Het materiaal gedraagt zich als een elastische soep in plaats van een vloeistof.")
+            elif not np.isnan(slope_term):
+                st.success("✅ **Perfect Vloeigedrag.** De helling nadert 2.0 (Newtoniaans vloeien).")
             st.subheader("Overzichtstabel")
             st.table(summ_df)
             
