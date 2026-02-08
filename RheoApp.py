@@ -256,7 +256,7 @@ if uploaded_file:
         
         # Startwaarden aanpassen op basis van Tg
         c2_init = max(50.0, ref_temp - tg_hint) 
-        res_wlf = minimize(wlf_err, x0=[17.4, c2_init])
+        res_wlf = minimize(wlf_err, x0=[17.4, c2_init], bounds=[(1, 50), (10, 200)])
         wlf_c1, wlf_c2 = res_wlf.x
 
         # --- BEREKEN CROSSOVERS PER TEMPERATUUR ---
@@ -398,9 +398,24 @@ if uploaded_file:
             ax3.set_xscale('log')
             ax3.set_xlabel("|G*| (Pa)")
             ax3.set_ylabel("δ (°)")
-            ax3.grid(True, alpha=0.2)
-            ax3.legend()
+            ax3.set_ylim(0, 95)
+            ax3.grid(True, which="both", alpha=0.2)
+            ax3.legend("Meettemperatuur")
             st.pyplot(fig3)
+
+            st.markdown("### 🔍 Morfologische Diagnose")
+            
+            # Een simpele check: liggen de delta's bij de hoogste moduli dicht bij elkaar?
+            st.info("""
+            **Hoe lees je dit als een expert?**
+            * **Lijnen vallen samen (Superpositie):** Je sample is een homogene smelt. WLF en Arrhenius zijn hier zeer betrouwbaar.
+            * **Lijnen wijken af (Spreiding):** Dit is typisch voor TPU. De harde segmenten lossen op of kristalliseren uit. 
+            * **De 'Bult' in de curve:** Als de curve omlaag duikt bij lage moduli, heb je te maken met een elastisch netwerk (onvolledige smelt).
+            """)
+            
+            if len(selected_temps) > 1:
+                st.warning("👉 **Observatie:** Als je hier duidelijke 'trappen' of verschuivingen tussen de kleuren ziet, verklaart dat je negatieve WLF C1 waarde. Het materiaal is thermorheologisch complex.")
+                
         with tab3:
             st.subheader("Loss Tangent (tan δ) - Relaxation Spectrum")
             fig_tan, ax_tan = plt.subplots(figsize=(10, 5))
@@ -579,6 +594,27 @@ if uploaded_file:
             summary_table_df = pd.DataFrame(dashboard_data)
             st.table(summary_table_df)
 
+            st.subheader("🔍 Model Betrouwbaarheid")
+            
+            check_col1, check_col2 = st.columns(2)
+            
+            with check_col1:
+                st.write("**WLF Validatie:**")
+                if wlf_c1 < 0 or wlf_c2 < 0:
+                    st.error(f"❌ **WLF Fysiek Onmogelijk:** De gevonden waarden (C1: {wlf_c1:.2f}) zijn natuurkundig incorrect voor een smelt.")
+                    st.info("💡 *Oorzaak:* Waarschijnlijk is het materiaal thermorheologisch complex (fasescheiding) of zijn de shift-factors niet vloeiend genoeg.")
+                elif wlf_c1 < 5 or wlf_c1 > 30:
+                    st.warning(f"⚠️ **WLF Onwaarschijnlijk:** De waarden wijken sterk af van de universele constanten. Gebruik met voorzichtigheid.")
+                else:
+                    st.success("✅ **WLF Stabiel:** De parameters vallen binnen het normale bereik voor polymeren.")
+
+            with check_col2:
+                st.write("**Arrhenius Validatie:**")
+                if r2_final > 0.98:
+                    st.success(f"✅ **Arrhenius dominant:** De lineaire fit is uitstekend (R²: {r2_final:.4f}).")
+                else:
+                    st.warning(f"⚠️ **Arrhenius afwijking:** R² is {r2_final:.4f}. Mogelijk fase-overgangen in dit T-bereik.")
+
             # --- DE DIAGNOSE (Inzichten uit alle tabs) ---
             st.subheader("🧠 2. Professor's Diagnose")
             
@@ -620,15 +656,15 @@ if uploaded_file:
             col_ex1, col_ex2, col_ex3, col_ex4 = st.columns(4)
 
             # 1. Summary CSV
-            col_ex1.download_button("📊 Summary CSV", summary_table_df.to_csv(index=False).encode('utf-8'), f"Summary_{sample_name}.csv", "text/csv")
+            col_ex1.download_button("📊 Summary CSV", summary_table_df.to_csv(index=False).encode('utf-8'), f"{sample_name}_Summary.csv", "text/csv")
 
             # 2. Shifts CSV
             shift_export_df = pd.DataFrame({'T_C': selected_temps, 'log_aT': [st.session_state.shifts[t] for t in selected_temps]})
-            col_ex2.download_button("🕒 Shifts CSV", shift_export_df.to_csv(index=False).encode('utf-8'), f"Shifts_{sample_name}.csv", "text/csv")
+            col_ex2.download_button("🕒 Shifts CSV", shift_export_df.to_csv(index=False).encode('utf-8'), f"{sample_name}_Shifts.csv", "text/csv")
 
             # 3. Crossovers CSV
             if not co_df.empty:
-                col_ex3.download_button("⚖️ Crossovers CSV", co_df.to_csv(index=False).encode('utf-8'), f"Crossovers_{sample_name}.csv", "text/csv")
+                col_ex3.download_button("⚖️ Crossovers CSV", co_df.to_csv(index=False).encode('utf-8'), f"{sample_name}_Crossovers.csv", "text/csv")
 
             # --- 4. Master Curve CSV (Foutbestendige versie) ---
             # We definiëren welke kolommen we ZOUDEN WILLEN hebben
@@ -658,7 +694,7 @@ if uploaded_file:
             col_ex4.download_button(
                 label="📈 Master Curve CSV",
                 data=csv_master,
-                file_name=f"MasterCurve_{sample_name}.csv",
+                file_name=f"{sample_name}_MasterCurve.csv",
                 mime="text/csv"
             )
     else:
