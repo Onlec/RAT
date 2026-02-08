@@ -159,10 +159,36 @@ def calculate_rheo_metrics(m_df):
         popt, _ = curve_fit(lambda o, e, t, n: e / (1 + (t * o)**n), w, eta_complex, p0=p0, maxfev=5000)
         eta0 = popt[0]
         # Verbeterde plateau modulus volgens Professor:
-        gn0 = m_df.loc[m_df['Gpp'] == m_df['Gpp'].min(), 'Gp'].max()
+        # --- Verbeterde Plateau Modulus (G_N^0) ---
+        # We zoeken de zone waar het materiaal zich elastisch gedraagt
+        plateau_zone = m_df[m_df['Gp'] > 2 * m_df['Gpp']]
+
+        if len(plateau_zone) > 3:
+            # De mediaan vlakt uitschieters bij hoge/lage frequentie uit
+            gn0 = plateau_zone['Gp'].median()
+            gn0_status = "✅ Berekend via mediaan elastisch regime"
+        else:
+            # Fallback naar de oude methode als het regime niet bereikt is
+            gn0 = m_df['Gp'].max()
+            gn0_status = "⚠️ Geschat (geen duidelijk plateau gevonden)"
         return eta0, gn0, popt, True
     except:
         return np.nan, np.nan, p0, False
+
+def find_all_crossovers(omega, Gp, Gpp):
+    crossovers = []
+    log_gp = np.log10(Gp)
+    log_gpp = np.log10(Gpp)
+    diff = log_gp - log_gpp
+    
+    for i in range(len(diff) - 1):
+        if diff[i] * diff[i+1] < 0:  # Tekenwisseling gevonden
+            # Lineaire interpolatie in log-log ruimte voor precisie
+            frac = abs(diff[i]) / (abs(diff[i]) + abs(diff[i+1]))
+            omega_co = 10**(np.log10(omega[i]) + frac * (np.log10(omega[i+1]) - np.log10(omega[i])))
+            modulus_co = 10**(log_gp[i] + frac * (log_gp[i+1] - log_gp[i]))
+            crossovers.append({"omega": omega_co, "modulus": modulus_co})
+    return crossovers
 
 
 # --- SIDEBAR ---
@@ -321,8 +347,8 @@ if uploaded_file:
         st.subheader(f"Sample: {sample_name}")
         tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
                 "📈 Master Curve", "🧪 Structuur", "📉 tan δ Analyse", 
-                "🧬 Thermisch (Ea/WLF)", "🔬 Validatie", 
-                "⚛️ Moleculaire Analyse", "📊 Dashboard"
+                "🌡️ Thermisch (Ea/WLF/VFT)", "🔬 Validatie", 
+                "🧬 Moleculaire Analyse", "📊 Dashboard"
             ])
 
         with tab1:
@@ -438,7 +464,7 @@ if uploaded_file:
             st.pyplot(fig_tan)
             st.info("💡 Peaks in tan δ geven karakteristieke relaxatietijden aan. Bij TPU zie je vaak een verschuiving die duidt op de beweeglijkheid van de zachte segmenten.")
         with tab4:
-            st.subheader("🧬 Thermische Karakterisatie: Arrhenius, WLF & VFT")
+            st.subheader("Thermische Karakterisatie: Arrhenius, WLF & VFT")
             
             # 1. Definieer de modellen
             def vft_model(T, A, B, T0):
@@ -501,8 +527,8 @@ if uploaded_file:
                 # De Softening Point metric
                 st.metric("**Estimated Softening Point:**", f"{t_softening:.1f} °C")
                 st.metric("**VFT T₀ (Vogel):**", f"{popt_vft[2]-273.15:.1f} °C" if vft_success else "VFT: N/A")
-                st.metric("**WLF C1:**",f"{wlf_c1:.1f} / {wlf_c2:.1f}")
-                st.metric("**WLF C2:**",f"{wlf_c1:.1f} / {wlf_c2:.1f}")
+                st.metric("**WLF C1:**",f"{wlf_c1:.1f}")
+                st.metric("**WLF C2:**",f"{wlf_c2:.1f}")
                 # --- DYNAMISCHE VALIDATIE ---
                 st.write("---")
                 st.write("**Referentie T Validatie:**")
@@ -531,14 +557,14 @@ if uploaded_file:
 
                 st.markdown(f"""
                 <div style="background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #ffa500;">
-                <b>Professor's Eindoordeel:</b><br>
+                <b>Tip:</b><br>
                 De overgang bij <b>{t_softening:.1f}°C</b> bepaalt de wetten van je TPU. 
                 Bij lagere temperaturen "vechten" de harde segmenten tegen de vloei, wat de WLF-curve doet afwijken. 
                 Bij hogere temperaturen wint de entropie en regeert Arrhenius.
                 </div>
                 """, unsafe_allow_html=True)
         with tab5:
-            st.subheader("🔬 Geavanceerde TTS Validatie")
+            st.subheader("TTS Validatie")
             cv1, cv2 = st.columns(2)
             
             with cv1:
@@ -621,7 +647,56 @@ if uploaded_file:
             
         with tab7:
             st.header("📊 Expert Dashboard")
+
+
+            # --- STAP 2: ROBUUSTE BEREKENINGEN (ACHTER DE SCHERMEN) ---
             
+            # 1. Verbeterde Plateau Modulus (G_N^0)
+            plateau_zone = m_df[m_df['Gp'] > 2 * m_df['Gpp']]
+            if len(plateau_zone) > 3:
+                gn0 = plateau_zone['Gp'].median()
+                gn0_info = "Mediaan elastisch regime"
+            else:
+                gn0 = m_df['Gp'].max()
+                gn0_info = "Max G' (geen duidelijke plateau)"
+
+            # 2. Meervoudige Crossover Analyse
+            all_cos = find_all_crossovers(m_df['w_s'].values, m_df['Gp'].values, m_df['Gpp'].values)
+            num_cos = len(all_cos)
+            primary_co_mod = all_cos[0]['modulus'] if all_cos else np.nan
+            
+            # 3. Adjusted R² voor Arrhenius
+            n_points = len(log_at_global)
+            # We straffen als er weinig data is (n-2 omdat we slope en intercept fitten)
+            r2_adj = 1 - (1 - r2_final) * (n_points - 1) / max(n_points - 2, 1)
+
+            # --- UI: KPI Quick-Look ---
+            col_a, col_b, col_c, col_d = st.columns(4)
+            col_a.metric("Flow Activation (Ea)", f"{ea_final:.1f} kJ/mol")
+            col_b.metric("Plateau Modulus (Gₙ⁰)", f"{gn0:.2e} Pa")
+            # We tonen nu de eerlijkere Adjusted R²
+            col_c.metric("TTS Adj. R²", f"{r2_adj:.4f}", help="Gecorrigeerd voor het aantal datapunten")
+            col_d.metric("Crossovers", f"{num_cos}", delta="Complex" if num_cos > 1 else None)
+
+            st.divider()
+
+            # --- BLOK 1: TOTAAL OVERZICHT PARAMETERS ---
+            st.subheader("📋 1. Globale Rheologische Parameters")
+            
+            dashboard_data = [
+                {"Categorie": "Thermisch", "Parameter": "Activatie Energie (Ea)", "Waarde": f"{ea_final:.2f}", "Eenheid": "kJ/mol", "Info": "Gevoeligheid voor T-veranderingen"},
+                {"Categorie": "Thermisch", "Parameter": "WLF C1 (Logat)", "Waarde": f"{wlf_c1:.2f}", "Eenheid": "-", "Info": "Vrije volume factor"},
+                {"Categorie": "Statistiek", "Parameter": "Adjusted R²", "Waarde": f"{r2_adj:.4f}", "Eenheid": "-", "Info": "Betrouwbaarheid Arrhenius fit"},
+                {"Categorie": "Viscositeit", "Parameter": "Zero Shear Viscosity (η₀)", "Waarde": f"{eta0:.2e}", "Eenheid": "Pa·s", "Info": "Maat voor Mw"},
+                {"Categorie": "Structuur", "Parameter": "Crossover Modulus", "Waarde": f"{primary_co_mod:.2e}" if not np.isnan(primary_co_mod) else "N/A", "Eenheid": "Pa", "Info": "Punt waar G' = G''"},
+                {"Categorie": "Structuur", "Parameter": "Terminal Slope G'", "Waarde": f"{slope_term:.2f}", "Eenheid": "-", "Info": "Vloeigedrag (Ideaal = 2.0)"},
+                {"Categorie": "Structuur", "Parameter": "Plateau Modulus (Gₙ⁰)", "Waarde": f"{gn0:.2e}", "Eenheid": "Pa", "Info": gn0_info},
+            ]
+            
+            summary_table_df = pd.DataFrame(dashboard_data)
+            st.table(summary_table_df)
+
+           
             # --- KPI Quick-Look ---
             col_a, col_b, col_c, col_d = st.columns(4)
             col_a.metric("Flow Activation (Ea)", f"{ea_final:.1f} kJ/mol")
