@@ -9,24 +9,25 @@ from io import BytesIO
 
 from translations import get_translations
 
-# 1. Taalbeheer
+
 if 'lang' not in st.session_state:
     st.session_state.lang = 'NL'
 
 with st.sidebar:
+    st.divider()
     lang_choice = st.selectbox(
         "Taal / Language", 
         ["Nederlands", "English"], 
         index=0 if st.session_state.lang == 'NL' else 1
     )
     st.session_state.lang = "NL" if lang_choice == "Nederlands" else "EN"
-    
-# 2. Haal de actieve vertaalset op
-texts = get_translations()[st.session_state.lang]
+    texts = get_translations()[st.session_state.lang]
+
+
 
 # --- CONFIGURATIE & STYLING ---
 st.set_page_config(page_title="RheoApp", layout="wide")
-st.title("RheoApp")
+st.title(texts["app_title"])
 st.caption("-Rheologie is 50% meten en 50% gezond verstand.")
 # Custom CSS voor betere leesbaarheid van expert-notes
 st.markdown("""
