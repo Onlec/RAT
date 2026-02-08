@@ -1050,11 +1050,7 @@ with tab_prep:
     
     # Editable checklist (voor interactief gebruik)
     st.info("💡 **Tip:** Screenshot deze checklist of print als PDF voor gebruik bij de rheometer!")
-    
-    st.table(df_checklist)
-    
-    st.divider()
-    
+
     # During Measurement
     st.subheader("🔄 TIJDENS METING - Monitor Punten")
     
@@ -1139,45 +1135,6 @@ with tab_prep:
        → Droog met N₂
        → Bewaar proper
     """, language="text")
-    
-    st.divider()
-    
-    # Troubleshooting Guide
-    st.subheader("🆘 Snel Troubleshooting During Measurement")
-    
-    trouble_data = {
-        "Symptoom": [
-            "G' daalt plotseling", 
-            "G' stijgt onverklaarbaar", 
-            "Fasehoek δ > 90°", 
-            "G' daalt in time-sweep", 
-            "G' stijgt in time-sweep", 
-            "Bellen in sample", 
-            "Bruine verkleuring"
-        ],
-        "Oorzaak": [
-            "Sample squeeze flow", 
-            "Sample te weinig/Slip", 
-            "Instrument traagheid", 
-            "Degradatie/Hydrolyse", 
-            "Crosslinking/Na-reactie", 
-            "Vocht/CO2 vorming", 
-            "Oxidatie"
-        ],
-        "Directe Actie": [
-            "Reset gap", 
-            "Reduceer gap 0.1mm", 
-            "Check luchttoevoer", 
-            "Check droogtijd", 
-            "T_max verlagen", 
-            "Sample 2u nadrogen", 
-            "N2 flow verhogen"
-        ]
-    }
-
-    # Gebruik een schone variabelenaam om verwarring te voorkomen
-    df_trouble_final = pd.DataFrame(trouble_data)
-    st.table(df_trouble_final)
 
 # Sidebar
 st.sidebar.markdown("---")
