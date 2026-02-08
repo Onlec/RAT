@@ -14,7 +14,6 @@ if 'lang' not in st.session_state:
     st.session_state.lang = 'NL'
 
 with st.sidebar:
-    st.divider()
     lang_choice = st.selectbox(
         "Taal / Language", 
         ["Nederlands", "English"], 
