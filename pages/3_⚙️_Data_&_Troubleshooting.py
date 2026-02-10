@@ -1,26 +1,22 @@
 import streamlit as st
 import pandas as pd
 import json
-from pathlib import Path
 
-# --- LANGUAGE SETUP ---
-# 1. MOET EERST: Config
-st.set_page_config(page_title="Theorie & Modellen", layout="wide")
-
-# 2. Taal check
+# --- LANGUAGE & TRANSLATIONS SETUP ---
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'nl'
+    st.session_state.lang = 'NL'
 
-# 3. Laad de data
-all_translations = get_translations() 
+@st.cache_data
+def load_translations():
+    try:
+        with open('translations.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        st.error("❌ Translation file 'translations.json' not found!")
+        return {"NL": {"main_app": {}}, "EN": {"main_app": {}}}
 
-# 4. Haal de specifieke teksten voor DEZE pagina op
-# We pakken de taal, en daaruit de sectie 'theory_models'
-try:
-    texts = all_translations[st.session_state.lang]['theory_models']
-except KeyError:
-    # Fallback als de taal of sectie niet bestaat
-    texts = all_translations['nl']['data_troubleshooting']
+all_translations = load_translations()
+texts = all_translations.get(st.session_state.lang, all_translations["NL"]).get("data_troubleshooting", {})
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -31,19 +27,17 @@ st.set_page_config(
 
 # --- LANGUAGE SWITCHER IN SIDEBAR ---
 col1, col2 = st.sidebar.columns(2)
-
 with col1:
     if st.button("🇳🇱 NL", use_container_width=True,
-                 type="primary" if st.session_state.lang == 'nl' else "secondary"):
-        if st.session_state.lang != 'nl':
-            st.session_state.lang = 'nl'
+                 type="primary" if st.session_state.lang == 'NL' else "secondary"):
+        if st.session_state.lang != 'NL':
+            st.session_state.lang = 'NL'
             st.rerun()
-
 with col2:
     if st.button("🇬🇧 EN", use_container_width=True,
-                 type="primary" if st.session_state.lang == 'en' else "secondary"):
-        if st.session_state.lang != 'en':
-            st.session_state.lang = 'en'
+                 type="primary" if st.session_state.lang == 'EN' else "secondary"):
+        if st.session_state.lang != 'EN':
+            st.session_state.lang = 'EN'
             st.rerun()
 
 # --- HEADER ---
