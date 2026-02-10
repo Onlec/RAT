@@ -20,7 +20,7 @@ texts = all_translations.get(st.session_state.lang, all_translations["NL"]).get(
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title=texts.get("page_title", "Data & Troubleshooting - RheoApp"),
+    page_title=texts.get("page_title", "Data & Troubleshooting - RAT"),
     page_icon=texts.get("page_icon", "⚙️"),
     layout="wide"
 )
@@ -179,7 +179,7 @@ if tips.get("additional_tips_title"):
 
 # --- FOOTER ---
 # --- LANGUAGE SWITCHER IN SIDEBAR ---
-
+st.sidebar.markdown("---")
 col1, col2 = st.sidebar.columns(2)
 with col1:
     if st.button("🇳🇱 NL", use_container_width=True,
@@ -194,4 +194,4 @@ with col2:
             st.session_state.lang = 'EN'
             st.rerun()
 st.sidebar.markdown("---")
-st.sidebar.caption("RheoApp - v1.0")
+st.sidebar.caption("RAT - Rheology Analysis Tool - v1.0")

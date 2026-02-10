@@ -1,10 +1,10 @@
 {
   "NL": {
     "theory_models": {
-      "page_title": "Theorie & Modellen - RheoApp",
+      "page_title": "Theorie & Modellen - RAT",
       "page_icon": "🧬",
       "main_title": "🧬 Theoretische Achtergrond & Modellen",
-      "main_intro": "Deze pagina bevat de wetenschappelijke basis van de RheoApp. Hier vind je de achterliggende formules, \ninteractieve visualisaties en de interpretatie van thermische en visco-elastische modellen.",
+      "main_intro": "Deze pagina bevat de wetenschappelijke basis van de RAT. Hier vind je de achterliggende formules, \ninteractieve visualisaties en de interpretatie van thermische en visco-elastische modellen.",
       "tab_tts_name": "🕒 Time-Temperature Superposition",
       "tab_thermal_name": "🔥 Thermische Modellen (Arrhenius/WLF/VFT)",
       "tab_structural_name": "🏗️ Structurele Parameters",
@@ -125,7 +125,7 @@
         "terminal_slope_title": "📐 Terminal Slope",
         "terminal_slope_subtitle": "Validatie van Complete Smelt",
         "terminal_slope_definition_label": "**Definitie:**",
-        "terminal_slope_definition": "In de **terminal zone** (laagste frequenties, δ > 75°) moet een **Newtoniaanse vloeistof** voldoen aan:\n\n$$G' \\propto \\omega^2 \\quad \\text{(slope = 2 in log-log plot)}$$\n$$G'' \\propto \\omega^1 \\quad \\text{(slope = 1 in log-log plot)}$$\n\n**In RheoApp:** We berekenen de slope van $\\log(G')$ vs $\\log(\\omega)$ in de terminal zone.",
+        "terminal_slope_definition": "In de **terminal zone** (laagste frequenties, δ > 75°) moet een **Newtoniaanse vloeistof** voldoen aan:\n\n$$G' \\propto \\omega^2 \\quad \\text{(slope = 2 in log-log plot)}$$\n$$G'' \\propto \\omega^1 \\quad \\text{(slope = 1 in log-log plot)}$$\n\n**In RAT:** We berekenen de slope van $\\log(G')$ vs $\\log(\\omega)$ in de terminal zone.",
         "terminal_slope_ideal_label": "**Ideale waarde:**",
         "terminal_slope_ideal": "**Slope = 2.0** → Perfect Newtoniaans gedrag\n\n**Dit betekent:**\n- Materiaal is volledig gesmolten\n- Geen residuele kristallisatie\n- Geen crosslinking\n- Geen long-chain branching",
         "terminal_slope_interpretation_label": "**Interpretatie van Afwijkingen:**",
@@ -181,7 +181,7 @@
       }
     },
     "interpretation_guide": {
-      "page_title": "Interpretatie Gids - RheoApp",
+      "page_title": "Interpretatie Gids - RAT",
       "page_icon": "🧪",
       "main_title": "🧪 Interpretatie & Validatie Gids",
       "main_intro": "Hoe lees je de grafieken in het dashboard? Gebruik deze gids om te bepalen of je meting betrouwbaar is \nen wat de curves vertellen over de structuur van je TPU. **Deze pagina is je 'cheat sheet' voor rheologie!**",
@@ -382,7 +382,7 @@
       }
     },
     "data_troubleshooting": {
-      "page_title": "Data & Troubleshooting - RheoApp",
+      "page_title": "Data & Troubleshooting - RAT",
       "page_icon": "⚙️",
       "main_title": "⚙️ Data Specificaties & Troubleshooting",
       "main_intro": "Zorg ervoor dat je data correct is geformatteerd om fouten in de berekeningen te voorkomen. \nDeze pagina helpt je bij het voorbereiden van je bestanden en het oplossen van veelvoorkomende problemen.",
@@ -463,12 +463,12 @@
         "additional_tips": "**1. Sample Loading Technique**\n```\n✅ Goede Methode:\n  - Pre-heat geometrie tot T_load\n  - Plaats sample SNEL (< 10 sec exposure)\n  - Close gap immediately\n  - Trim excess material\n  - 5 min equilibratie voor meting\n\n❌ Slechte Methode:\n  - Sample langdurig aan lucht bij T_load (oxidatie!)\n  - Geometrie koud (sample stolt)\n  - Te veel materiaal (squeeze-out tijdens meting)\n```\n\n**2. Gap Setting (Parallel Plates)**\n```\nVoor TPU melt:\n- Gap: 1.0 - 1.5 mm (standaard)\n- Sample diameter: 25 mm of 40 mm (common)\n- Aspect ratio: D/gap > 20 (rule of thumb)\n\nControle:\n- Normal force < 2N na loading ✅\n- Geen sample squeeze-out tijdens meting ✅\n- Homogene sample tussen plates (no bubbles) ✅\n```\n\n**3. N₂ Purge (Oxidatie Preventie)**\n```\nALTIJD gebruiken bij:\n- T > 200°C (kritiek!)\n- T > 180°C (aanbevolen)\n- Lange metingen (> 30 min total)\n\nFlow rate: 50-100 mL/min\nPlacement: Purge hood over geometry\nCost: Verwaarloosbaar vs sample value!\n```\n\n**4. Multiple Samples (Reproducibility Check)**\n```\nVoor kritische batches:\nMeasure 3 independent samples:\n  Sample A: η₀ = 3.2×10⁵ Pa·s\n  Sample B: η₀ = 3.1×10⁵ Pa·s  \n  Sample C: η₀ = 3.3×10⁵ Pa·s\n  \n  Average: 3.2×10⁵ Pa·s\n  Std dev: 0.1×10⁵ Pa·s\n  CV = 3.1% ✅ Goede reproducibiliteit!\n\nIF CV > 10%:\n  → Sample inhomogeneity\n  → Drying inconsistent\n  → Instrument issue\n```\n\n**5. Reporting Requirements**\n```\nMinimum in report:\n- Sample ID & batch number\n- Drying conditions (T, time, method)\n- Strain amplitude (verify LVE!)\n- Temperature range & T_ref\n- Model used (Arrhenius/WLF)\n- R² van fits\n- η₀, G_N⁰ met eenheid\n- TTS quality (vGP overlap? Yes/No)\n\nOptional maar waardevol:\n- Softening point\n- Number of crossovers\n- Terminal slope\n- Moisture content (if measured)\n```"
       },
       "footer": {
-        "version": "RheoApp Versie 1.0.0",
+        "version": "RAT Versie 1.0",
         "sidebar_divider": "---"
       }
     },
     "main_app": {
-      "title": "RheoApp - Rheology Analysis Tool",
+      "title": "RAT - Rheology Analysis Tool",
       "caption": "💡 *Rheologie is 50% meten en 50% gezond verstand.*",
       "disclaimer_title": "⚠️ BELANGRIJKE DISCLAIMER",
       "disclaimer_text": "\n**Dit is een experimentele tool ontwikkeld via AI-assisted coding (Claude.ai & Gemini).**\n\n- ❌ **GEEN garantie** op correctheid van berekeningen\n- ❌ **GEEN formele validatie** tegen industriestandaarden  \n- ❌ **NIET bedoeld** voor kritische beslissingen zonder verificatie\n\n**Gebruik op eigen risico.** Valideer altijd met handberekeningen en gevalideerde software.\n\nZie **README.md** voor volledige disclaimer en beperkingen.\n",
@@ -573,16 +573,16 @@
       "export_shifts": "🕒 Shift Factors CSV",
       "export_crossovers": "⚖️ Crossovers CSV",
       "export_mastercurve": "📈 Master Curve CSV",
-      "instructions_title": "ℹ️ **Gebruiksinstructies** - Hoe gebruik je RheoApp?",
+      "instructions_title": "ℹ️ **Gebruiksinstructies** - Hoe gebruik je RAT?",
       "instructions": "\n## 🚀 Quick Start Guide\n\n### 1. UPLOAD\n- Klik **\"Browse files\"** in de sidebar\n- Selecteer je frequency sweep data (CSV/TXT)\n- Ondersteunde formaten: TA Instruments, Anton Paar, simpele CSV\n- Sample naam wordt automatisch geëxtraheerd\n\n### 2. CONFIGURATIE\n- **Selecteer Temperaturen:** Kies welke T's te gebruiken (minimaal 3)\n- **Kies Referentie T:** Bij voorkeur **hoogste temperatuur** (boven softening point!)\n- **Colormap:** Visuele voorkeur voor plots\n- **Verwachte Tg:** Voor WLF hint (typisch TPU: -40°C)\n\n### 3. ALIGNMENT (Shift Factors)\n- **Optie A:** Klik **\"🚀 Auto-Align\"** voor automatische optimalisatie\n- **Optie B:** Pas **handmatig** aan met sliders (voor fine-tuning)\n- **Reset:** Klik \"🔄 Reset\" om opnieuw te beginnen\n\n### 4. ANALYSE (7 Tabs)\n\n| Tab | Wat Check Je? | Belangrijkste Validatie |\n|-----|---------------|-------------------------|\n| **1. Master Curve** | Overlap van curves | Visuele TTS check |\n| **2. Structuur (vGP)** | Thermorheologische eenvoud | **KRITIEK: Curves moeten samenvallen** |\n| **3. tan δ** | Relaxatie spectrum | Crossover identificatie |\n| **4. Thermisch** | Ea, WLF, VFT modellen | Softening Point vs T_ref |\n| **5. TTS Validatie** | Han & Cole-Cole | Chemische stabiliteit & MWD |\n| **6. Moleculair** | η₀, G_N⁰ extractie | Verwerkbaarheid parameters |\n| **7. Dashboard** | Alle metrics + export | **START HIER voor overzicht** |\n\n### 5. EXPORT\n- Ga naar **Tab 7 (Dashboard)**\n- Klik op de **4 export buttons**:\n  1. Parameters CSV (Ea, η₀, WLF, etc.)\n  2. Shift Factors CSV (per temperatuur)\n  3. Crossovers CSV\n  4. Master Curve CSV (alle punten)\n\n---\n\n## 📚 Hulp Nodig?\n\n**Bekijk de sidebar pages voor gedetailleerde uitleg:**\n\n- **🌡️ Theorie & Modellen:** Alle formules en fysische achtergrond\n- **🧪 Interpretatie Gids:** Hoe lees je de grafieken? (vGP, Han, Cole-Cole)\n- **⚙️ Data & Troubleshooting:** File formats, error messages, TPU meet-tips\n\n**Bij problemen:**\n1. Check **Interpretatie Gids** → **Praktijk Scenario's**\n2. Bekijk **Data & Troubleshooting** → **Foutmeldingen**\n3. Valideer met **Theorie & Modellen** → **Snelle Calculators**\n"
     }
   },
   "EN": {
     "theory_models": {
-      "page_title": "Theory & Models - RheoApp",
+      "page_title": "Theory & Models - RAT",
       "page_icon": "🧬",
       "main_title": "🧬 Theoretical Background & Models",
-      "main_intro": "This page contains the scientific foundation of the RheoApp. Here you will find the underlying formulas, \ninteractive visualizations and the interpretation of thermal and visco-elastic models.",
+      "main_intro": "This page contains the scientific foundation of the RAT. Here you will find the underlying formulas, \ninteractive visualizations and the interpretation of thermal and visco-elastic models.",
       "tab_tts_name": "🕒 Time-Temperature Superposition",
       "tab_thermal_name": "🔥 Thermal Models (Arrhenius/WLF/VFT)",
       "tab_structural_name": "🏗️ Structural Parameters",
@@ -703,7 +703,7 @@
         "terminal_slope_title": "📐 Terminal Slope",
         "terminal_slope_subtitle": "Validation of Complete Melt",
         "terminal_slope_definition_label": "**Definition:**",
-        "terminal_slope_definition": "In the **terminal zone** (lowest frequencies, δ > 75°) a **Newtonian fluid** must satisfy:\n\n$$G' \\propto \\omega^2 \\quad \\text{(slope = 2 in log-log plot)}$$\n$$G'' \\propto \\omega^1 \\quad \\text{(slope = 1 in log-log plot)}$$\n\n**In RheoApp:** We calculate the slope of $\\log(G')$ vs $\\log(\\omega)$ in the terminal zone.",
+        "terminal_slope_definition": "In the **terminal zone** (lowest frequencies, δ > 75°) a **Newtonian fluid** must satisfy:\n\n$$G' \\propto \\omega^2 \\quad \\text{(slope = 2 in log-log plot)}$$\n$$G'' \\propto \\omega^1 \\quad \\text{(slope = 1 in log-log plot)}$$\n\n**In RAT:** We calculate the slope of $\\log(G')$ vs $\\log(\\omega)$ in the terminal zone.",
         "terminal_slope_ideal_label": "**Ideal value:**",
         "terminal_slope_ideal": "**Slope = 2.0** → Perfect Newtonian behaviour\n\n**This means:**\n- Material is fully melted\n- No residual crystallisation\n- No crosslinking\n- No long-chain branching",
         "terminal_slope_interpretation_label": "**Interpretation of Deviations:**",
@@ -759,7 +759,7 @@
       }
     },
     "interpretation_guide": {
-      "page_title": "Interpretation Guide - RheoApp",
+      "page_title": "Interpretation Guide - RAT",
       "page_icon": "🧪",
       "main_title": "🧪 Interpretation & Validation Guide",
       "main_intro": "How do you read the graphs in the dashboard? Use this guide to determine whether your measurement is reliable \nand what the curves tell you about the structure of your TPU. **This page is your rheology cheat sheet!**",
@@ -960,7 +960,7 @@
       }
     },
     "data_troubleshooting": {
-      "page_title": "Data & Troubleshooting - RheoApp",
+      "page_title": "Data & Troubleshooting - RAT",
       "page_icon": "⚙️",
       "main_title": "⚙️ Data Specifications & Troubleshooting",
       "main_intro": "Make sure your data is correctly formatted to prevent errors in calculations. \nThis page helps you prepare your files and resolve common problems.",
@@ -1041,12 +1041,12 @@
         "additional_tips": "**1. Sample Loading Technique**\n```\n✅ Good Method:\n  - Pre-heat geometry to T_load\n  - Place sample QUICKLY (< 10 sec exposure)\n  - Close gap immediately\n  - Trim excess material\n  - 5 min equilibration before measurement\n\n❌ Poor Method:\n  - Sample exposed to air at T_load for long time (oxidation!)\n  - Geometry cold (sample solidifies)\n  - Too much material (squeeze-out during measurement)\n```\n\n**2. Gap Setting (Parallel Plates)**\n```\nFor TPU melt:\n- Gap: 1.0 - 1.5 mm (standard)\n- Sample diameter: 25 mm or 40 mm (common)\n- Aspect ratio: D/gap > 20 (rule of thumb)\n\nVerification:\n- Normal force < 2N after loading ✅\n- No sample squeeze-out during measurement ✅\n- Homogeneous sample between plates (no bubbles) ✅\n```\n\n**3. N₂ Purge (Oxidation Prevention)**\n```\nALWAYS use when:\n- T > 200°C (critical!)\n- T > 180°C (recommended)\n- Long measurements (> 30 min total)\n\nFlow rate: 50-100 mL/min\nPlacement: Purge hood over geometry\nCost: Negligible vs sample value!\n```\n\n**4. Multiple Samples (Reproducibility Check)**\n```\nFor critical batches:\nMeasure 3 independent samples:\n  Sample A: η₀ = 3.2×10⁵ Pa·s\n  Sample B: η₀ = 3.1×10⁵ Pa·s\n  Sample C: η₀ = 3.3×10⁵ Pa·s\n  \n  Average: 3.2×10⁵ Pa·s\n  Std dev: 0.1×10⁵ Pa·s\n  CV = 3.1% ✅ Good reproducibility!\n\nIF CV > 10%:\n  → Sample inhomogeneity\n  → Drying inconsistent\n  → Instrument issue\n```\n\n**5. Reporting Requirements**\n```\nMinimum in report:\n- Sample ID & batch number\n- Drying conditions (T, time, method)\n- Strain amplitude (verify LVE!)\n- Temperature range & T_ref\n- Model used (Arrhenius/WLF)\n- R² of fits\n- η₀, G_N⁰ with unit\n- TTS quality (vGP overlap? Yes/No)\n\nOptional but valuable:\n- Softening point\n- Number of crossovers\n- Terminal slope\n- Moisture content (if measured)\n```"
       },
       "footer": {
-        "version": "RheoApp Version 1.0.0",
+        "version": "RAT Version 1.0.0",
         "sidebar_divider": "---"
       }
     },
     "main_app": {
-      "title": "RheoApp - Rheology Analysis Tool",
+      "title": "RAT - Rheology Analysis Tool",
       "caption": "💡 *Rheology is 50% measurement and 50% common sense.*",
       "disclaimer_title": "⚠️ IMPORTANT DISCLAIMER",
       "disclaimer_text": "\n**This is an experimental tool developed via AI-assisted coding (Claude.ai & Gemini).**\n\n- ❌ **NO guarantee** on calculation correctness\n- ❌ **NO formal validation** against industry standards  \n- ❌ **NOT intended** for critical decisions without verification\n\n**Use at your own risk.** Always validate with hand calculations and validated software.\n\nSee **README.md** for complete disclaimer and limitations.\n",
@@ -1151,7 +1151,7 @@
       "export_shifts": "🕒 Shift Factors CSV",
       "export_crossovers": "⚖️ Crossovers CSV",
       "export_mastercurve": "📈 Master Curve CSV",
-      "instructions_title": "ℹ️ **User Instructions** - How to use RheoApp?",
+      "instructions_title": "ℹ️ **User Instructions** - How to use RAT?",
       "instructions": "\n## 🚀 Quick Start Guide\n\n### 1. UPLOAD\n- Click **\"Browse files\"** in the sidebar\n- Select your frequency sweep data (CSV/TXT)\n- Supported formats: TA Instruments, Anton Paar, simple CSV\n- Sample name is automatically extracted\n\n### 2. CONFIGURATION\n- **Select Temperatures:** Choose which T's to use (minimum 3)\n- **Choose Reference T:** Preferably **highest temperature** (above softening point!)\n- **Colormap:** Visual preference for plots\n- **Expected Tg:** For WLF hint (typical TPU: -40°C)\n\n### 3. ALIGNMENT (Shift Factors)\n- **Option A:** Click **\"🚀 Auto-Align\"** for automatic optimization\n- **Option B:** Adjust **manually** with sliders (for fine-tuning)\n- **Reset:** Click \"🔄 Reset\" to start over\n\n### 4. ANALYSIS (7 Tabs)\n\n| Tab | What to Check? | Key Validation |\n|-----|---------------|----------------|\n| **1. Master Curve** | Curve overlap | Visual TTS check |\n| **2. Structure (vGP)** | Thermorheological simplicity | **CRITICAL: Curves must collapse** |\n| **3. tan δ** | Relaxation spectrum | Crossover identification |\n| **4. Thermal** | Ea, WLF, VFT models | Softening Point vs T_ref |\n| **5. TTS Validation** | Han & Cole-Cole | Chemical stability & MWD |\n| **6. Molecular** | η₀, G_N⁰ extraction | Processability parameters |\n| **7. Dashboard** | All metrics + export | **START HERE for overview** |\n\n### 5. EXPORT\n- Go to **Tab 7 (Dashboard)**\n- Click the **4 export buttons**:\n  1. Parameters CSV (Ea, η₀, WLF, etc.)\n  2. Shift Factors CSV (per temperature)\n  3. Crossovers CSV\n  4. Master Curve CSV (all points)\n\n---\n\n## 📚 Need Help?\n\n**Check the sidebar pages for detailed explanations:**\n\n- **🌡️ Theory & Models:** All formulas and physical background\n- **🧪 Interpretation Guide:** How to read the graphs? (vGP, Han, Cole-Cole)\n- **⚙️ Data & Troubleshooting:** File formats, error messages, TPU measurement tips\n\n**When in trouble:**\n1. Check **Interpretation Guide** → **Practice Scenarios**\n2. Review **Data & Troubleshooting** → **Error Messages**\n3. Validate with **Theory & Models** → **Quick Calculators**\n"
     }
   }

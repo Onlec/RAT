@@ -1,4 +1,4 @@
-﻿# RheoApp - Master Curve and analysis Tool
+﻿# RAT - Rheology Analysis Tool
 
 > *"Rheologie is 50% meten en 50% gezond verstand."*
 
@@ -17,7 +17,7 @@
 
 ## 🎯 Overzicht
 
-**RheoApp** is een professionele Streamlit-applicatie voor de analyse van frequentie-sweep rheologie data van thermoplastische polyurethanen (TPU). De tool implementeert geavanceerde Time-Temperature Superposition (TTS) principes en biedt diepgaande moleculaire en thermische karakterisatie.
+**RAT** is een professionele Streamlit-applicatie voor de analyse van frequentie-sweep rheologie data van thermoplastische polyurethanen (TPU). De tool implementeert geavanceerde Time-Temperature Superposition (TTS) principes en biedt diepgaande moleculaire en thermische karakterisatie.
 
 ### Kernfunctionaliteiten
 
@@ -1101,7 +1101,7 @@ pip install streamlit pandas numpy matplotlib scipy
 ### Starten van de App
 
 ```bash
-streamlit run rheoapp.py
+streamlit run RAT.py
 ```
 
 De app opent automatisch in je browser op `http://localhost:8501`
@@ -1577,7 +1577,7 @@ Deze tool is ontwikkeld tijdens een weekend "vibe coding" sessie met behulp van 
 
 **Disclaimer Tekst voor Rapporten:**
 ```
-"Analyse uitgevoerd met open-source tool RheoApp (v1.0.0, niet-gevalideerd).
+"Analyse uitgevoerd met open-source tool RAT (v1.0, niet-gevalideerd).
 Resultaten zijn indicatief en dienen geverifieerd te worden met gevalideerde
 methoden voorafgaand aan gebruik in kritische beslissingen."
 ```

@@ -27,7 +27,7 @@ texts = all_translations.get(st.session_state.lang, all_translations["NL"]).get(
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title=texts.get("page_title", "Interpretatie Gids - RheoApp"),
+    page_title=texts.get("page_title", "Interpretatie Gids - RAT"),
     page_icon=texts.get("page_icon", "🧪"),
     layout="wide"
 )
@@ -373,4 +373,4 @@ with col2:
             st.session_state.lang = 'EN'
             st.rerun()
 st.sidebar.markdown("---")
-st.sidebar.caption("RheoApp - v1.0")
+st.sidebar.caption("RAT - Rheology Analysis Tool - v1.0")
