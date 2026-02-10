@@ -284,11 +284,13 @@ if uploaded_file:
 
         st.sidebar.markdown(f"**{texts.get('manual_shifts', '🎚️ Manual Shift Factors')}**")
         for t in selected_temps:
-            st.session_state.shifts[t] = st.sidebar.slider(
+            st.session_state.shifts[t] = st.sidebar.number_input(
                 f"{int(t)}°C",
-                -10.0, 10.0,
-                float(st.session_state.shifts[t]),
-                0.1,
+                min_value=-10.0,
+                max_value=10.0,
+                value=float(st.session_state.shifts[t]),
+                step=0.1,
+                format="%.2f",
                 key=f"{t}_{st.session_state.reset_id}"
             )
 
