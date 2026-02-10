@@ -178,6 +178,19 @@ if tips.get("additional_tips_title"):
     st.markdown(tips.get("additional_tips", "**1. Sample Loading:**\n..."))
 
 # --- FOOTER ---
-footer = texts.get("footer", {})
-st.sidebar.markdown(footer.get("sidebar_divider", "---"))
-st.sidebar.caption(footer.get("version", "RheoApp Versie 1.0.0"))
+# --- LANGUAGE SWITCHER IN SIDEBAR ---
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    if st.button("🇳🇱 NL", use_container_width=True,
+                 type="primary" if st.session_state.lang == 'NL' else "secondary"):
+        if st.session_state.lang != 'NL':
+            st.session_state.lang = 'NL'
+            st.rerun()
+with col2:
+    if st.button("🇬🇧 EN", use_container_width=True,
+                 type="primary" if st.session_state.lang == 'EN' else "secondary"):
+        if st.session_state.lang != 'EN':
+            st.session_state.lang = 'EN'
+            st.rerun()
+st.sidebar.divider()
+st.sidebar.caption("RheoApp - v1.0")
