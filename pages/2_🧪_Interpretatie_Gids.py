@@ -10,26 +10,24 @@ import json
 from pathlib import Path
 
 # --- LANGUAGE SETUP ---
+# 1. MOET EERST: Config
+st.set_page_config(page_title="Theorie & Modellen", layout="wide")
+
+# 2. Taal check
 if 'lang' not in st.session_state:
     st.session_state.lang = 'nl'
 
-@st.cache_data
-def load_translations(language):
-    """Load unified translations from languages folder"""
-    # Ga van pages/ naar root, dan naar languages/
-    lang_file = Path(__file__).parent.parent / 'languages' / f'{language}.json'
-    
-    with open(lang_file, 'r', encoding='utf-8') as f:
-        return json.load(f)
+# 3. Laad de data
+all_translations = get_translations() 
 
-# Load alle vertalingen
-all_texts = load_translations(st.session_state.lang)
+# 4. Haal de specifieke teksten voor DEZE pagina op
+# We pakken de taal, en daaruit de sectie 'theory_models'
+try:
+    texts = all_translations[st.session_state.lang]['theory_models']
+except KeyError:
+    # Fallback als de taal of sectie niet bestaat
+    texts = all_translations['nl']['interpretation_guide']
 
-# Kies de juiste sectie voor deze page
-# Page 1: 'theory_models'
-# Page 2: 'interpretation_guide'  
-# Page 3: 'data_troubleshooting'
-texts = all_texts['interpretation_guide']  # ← Verander per page!
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
