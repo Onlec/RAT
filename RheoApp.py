@@ -38,6 +38,11 @@ st.sidebar.write("Main_app aanwezig:", "main_app" in all_translations.get("NL", 
 texts = all_translations.get(st.session_state.lang, all_translations["NL"]).get("main_app", {})
 
 
+# DEBUG
+st.sidebar.write("Aantal keys in texts:", len(texts))
+st.sidebar.write("title:", texts.get("title"))
+
+
 # --- CONFIGURATIE & STYLING ---
 st.set_page_config(page_title=texts.get("title", "RheoApp"), layout="wide")
 
