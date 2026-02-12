@@ -29,7 +29,10 @@ texts = all_translations.get(st.session_state.lang, all_translations["NL"]).get(
 
 # --- CONFIGURATIE & STYLING ---
 st.set_page_config(page_title=texts.get("title", "RheoApp"), layout="wide")
-
+try:
+    st.image("logo.png", width=200)  # Of "assets/logo.png" als je een assets map hebt
+except:
+    pass  # Als logo niet gevonden wordt, gewoon doorgaan
 st.title(texts.get("title", "RheoApp - TPU Rheology Expert Tool"))
 st.caption(texts.get("caption", ""))
 
